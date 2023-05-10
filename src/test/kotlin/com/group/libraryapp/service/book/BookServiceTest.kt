@@ -33,7 +33,7 @@ class BookServiceTest @Autowired constructor(
     }
 
     @AfterEach
-    fun deleteTestData() {
+    fun clean() {
         bookRepository.deleteAll()
         userRepository.deleteAll()
     }
@@ -42,7 +42,7 @@ class BookServiceTest @Autowired constructor(
     fun `책 저장 테스트`() {
         //given
         val request = BookRequest("새로운 책")
-        
+
         //when
         bookService.saveBook(request)
 
@@ -85,7 +85,11 @@ class BookServiceTest @Autowired constructor(
         //given
         val request = BookReturnRequest("반납자", "코틀린 테스트")
         val user = userRepository.save(User("반납자", 234))
-        userLoanHistoryRepository.save(UserLoanHistory(user, "코틀린 테스트", false))
+        userLoanHistoryRepository.save(
+            UserLoanHistory(
+                user, "코틀린 테스트", false
+            )
+        )
 
         //when
         bookService.returnBook(request)
