@@ -63,16 +63,15 @@ class UserServiceTest @Autowired constructor(
     fun `회원 변경 테스트`() {
         //given
         val savedUser = userRepository.save(User("테스터1", null))
-        val request = UserUpdateRequest(savedUser.id, "변경될 이름")
+        val request = UserUpdateRequest(savedUser.id!!, "변경될 이름")
 
         //when
         userService.updateUserName(request)
 
         //then
-        val result = userRepository.findById(savedUser.id).get()
+        val result = userRepository.findById(savedUser.id!!).get()
         assertThat(result.name).isEqualTo("변경될 이름")
         assertThat(result.age).isNull()
-
     }
 
     @Test
