@@ -1,13 +1,17 @@
 package com.group.libraryapp.service.book
 
+import com.group.libraryapp.domain.book.Book
 import com.group.libraryapp.domain.book.BookRepository
+import com.group.libraryapp.domain.book.BookType
 import com.group.libraryapp.domain.user.User
 import com.group.libraryapp.domain.user.UserRepository
 import com.group.libraryapp.domain.user.loanhistory.UserLoanHistory
 import com.group.libraryapp.domain.user.loanhistory.UserLoanHistoryRepository
+import com.group.libraryapp.domain.user.loanhistory.UserLoanStatus
 import com.group.libraryapp.dto.book.request.BookLoanRequest
 import com.group.libraryapp.dto.book.request.BookRequest
 import com.group.libraryapp.dto.book.request.BookReturnRequest
+import com.group.libraryapp.util.fail
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
@@ -27,8 +31,7 @@ class BookServiceTest @Autowired constructor(
 
     @BeforeEach
     fun savingBasicBook() {
-        val request = BookRequest("코틀린 테스트")
-        bookService.saveBook(request)
+        bookRepository.save(Book.fixture("코틀린 테스트"))
         userRepository.save(User("테스터", 13))
     }
 
@@ -41,14 +44,16 @@ class BookServiceTest @Autowired constructor(
     @Test
     fun `책 저장 테스트`() {
         //given
-        val request = BookRequest("새로운 책")
+        val request = BookRequest("새로운 책", BookType.COMPUTER)
 
         //when
         bookService.saveBook(request)
 
         //then
-        val books = bookRepository.findByName("새로운 책").get()
-        assertThat(books.name).isEqualTo("새로운 책")
+        val book = bookRepository.findByName("새로운 책") ?: fail()
+        assertThat(book.type.name).isEqualTo("COMPUTER")
+        assertThat(book.type).isEqualTo(BookType.COMPUTER)
+        assertThat(book.name).isEqualTo("새로운 책")
     }
 
     @Test
@@ -64,7 +69,16 @@ class BookServiceTest @Autowired constructor(
         assertThat(result).hasSize(1)
         assertThat(result).extracting("bookName").containsExactly("코틀린 테스트")
         assertThat(result).extracting("user").extracting("name").containsExactly("테스터")
-        assertThat(result).extracting("isReturn").containsExactly(false)
+        assertThat(result[0].status).isEqualTo(UserLoanStatus.LOANED)
+    }
+
+    @Test
+    fun `책을 찾지 못한 상황`() {
+        //given
+        val request = BookLoanRequest("테스터", "코틀린 테스트>?!")
+
+        //when && then
+        assertThrows<IllegalArgumentException> { bookService.loanBook(request) }
     }
 
     @Test
@@ -86,8 +100,8 @@ class BookServiceTest @Autowired constructor(
         val request = BookReturnRequest("반납자", "코틀린 테스트")
         val user = userRepository.save(User("반납자", 234))
         userLoanHistoryRepository.save(
-            UserLoanHistory(
-                user, "코틀린 테스트", false
+            UserLoanHistory.fixture(
+                user, "코틀린 테스트"
             )
         )
 
@@ -97,7 +111,7 @@ class BookServiceTest @Autowired constructor(
         //then
         val result: List<UserLoanHistory> = userLoanHistoryRepository.findAll()
         assertThat(result).hasSize(1)
-        assertThat(result[0].isReturn).isTrue
+        assertThat(result[0].status).isEqualTo(UserLoanStatus.RETURNED)
     }
 
 
