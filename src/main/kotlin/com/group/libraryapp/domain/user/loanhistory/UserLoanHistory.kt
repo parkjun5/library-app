@@ -21,9 +21,12 @@ class UserLoanHistory(
     val id: Long? = null,
 ) {
 
-    fun doReturn () {
+    fun doReturn() {
         this.status = UserLoanStatus.RETURNED
     }
+
+    val isReturn: Boolean
+        get() = this.status == UserLoanStatus.RETURNED
 
 
     companion object {
